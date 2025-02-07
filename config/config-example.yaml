@@ -1,0 +1,13 @@
+ads_client_id: # ads_client_id
+ads_client_secret: # ads_client_secret
+ads_redirect_uri: https://chmwmedia.postman.co
+ads_refresh_token: # ads_refresh_token
+ads_scope: [advertising::campaign_management]
+ads_token: # ads_token_string (optional)
+ads_profile_id: # 358923519404264
+
+sellingpartner_client_id: # sellingpartner_client_id
+sellingpartner_client_secret: # sellingpartner_client_secret
+sellingpartner_refresh_token: # sellingpartner_refresh_token
+sellingpartner_scope: [sellingpartnerapi::notifications]
+sellingpartner_token: # sellingpartner_token_string (optional)

@@ -1,0 +1,59 @@
+<?php
+
+namespace Anibalealvarezs\AmazonApi\Services\SellingPartner\Enums\ReportTypes\FulfillmentByAmazon;
+
+use Anibalealvarezs\AmazonApi\Services\SellingPartner\Interfaces\ReportOptions;
+
+/**
+ * @see https://developer-docs.amazon.com/sp-api/docs/report-type-values-fba
+ */
+enum Inventory: string implements ReportOptions
+{
+    case GET_AFN_INVENTORY_DATA = 'GET_AFN_INVENTORY_DATA';
+    case GET_AFN_INVENTORY_DATA_BY_COUNTRY = 'GET_AFN_INVENTORY_DATA_BY_COUNTRY';
+    case GET_LEDGER_SUMMARY_VIEW_DATA = 'GET_LEDGER_SUMMARY_VIEW_DATA';
+    case GET_LEDGER_DETAIL_VIEW_DATA = 'GET_LEDGER_DETAIL_VIEW_DATA';
+    case GET_RESERVED_INVENTORY_DATA = 'GET_RESERVED_INVENTORY_DATA';
+    case GET_FBA_MYI_UNSUPPRESSED_INVENTORY_DATA = 'GET_FBA_MYI_UNSUPPRESSED_INVENTORY_DATA';
+    case GET_FBA_MYI_ALL_INVENTORY_DATA = 'GET_FBA_MYI_ALL_INVENTORY_DATA';
+    case GET_RESTOCK_INVENTORY_RECOMMENDATIONS_REPORT = 'GET_RESTOCK_INVENTORY_RECOMMENDATIONS_REPORT';
+    case GET_FBA_FULFILLMENT_INBOUND_NONCOMPLIANCE_DATA = 'GET_FBA_FULFILLMENT_INBOUND_NONCOMPLIANCE_DATA';
+    case GET_STRANDED_INVENTORY_UI_DATA = 'GET_STRANDED_INVENTORY_UI_DATA';
+    case GET_STRANDED_INVENTORY_LOADER_DATA = 'GET_STRANDED_INVENTORY_LOADER_DATA';
+    case GET_FBA_STORAGE_FEE_CHARGES_DATA = 'GET_FBA_STORAGE_FEE_CHARGES_DATA';
+    case GET_PRODUCT_EXCHANGE_DATA = 'GET_PRODUCT_EXCHANGE_DATA';
+    case GET_FBA_INVENTORY_PLANNING_DATA = 'GET_FBA_INVENTORY_PLANNING_DATA';
+    case GET_FBA_OVERAGE_FEE_CHARGES_DATA = 'GET_FBA_OVERAGE_FEE_CHARGES_DATA';
+
+    /**
+     * @return array
+     */
+    public static function getValues(): array
+    {
+        return [
+            self::GET_AFN_INVENTORY_DATA,
+            self::GET_AFN_INVENTORY_DATA_BY_COUNTRY,
+            self::GET_LEDGER_SUMMARY_VIEW_DATA,
+            self::GET_LEDGER_DETAIL_VIEW_DATA,
+            self::GET_RESERVED_INVENTORY_DATA,
+            self::GET_FBA_MYI_UNSUPPRESSED_INVENTORY_DATA,
+            self::GET_FBA_MYI_ALL_INVENTORY_DATA,
+            self::GET_RESTOCK_INVENTORY_RECOMMENDATIONS_REPORT,
+            self::GET_FBA_FULFILLMENT_INBOUND_NONCOMPLIANCE_DATA,
+            self::GET_STRANDED_INVENTORY_UI_DATA,
+            self::GET_STRANDED_INVENTORY_LOADER_DATA,
+            self::GET_FBA_STORAGE_FEE_CHARGES_DATA,
+            self::GET_PRODUCT_EXCHANGE_DATA,
+            self::GET_FBA_INVENTORY_PLANNING_DATA,
+            self::GET_FBA_OVERAGE_FEE_CHARGES_DATA,
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function getReportOptions(): array
+    {
+        return [];
+    }
+}
