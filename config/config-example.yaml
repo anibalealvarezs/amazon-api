@@ -1,6 +1,6 @@
 ads_client_id: # ads_client_id
 ads_client_secret: # ads_client_secret
-ads_redirect_uri: https://chmwmedia.postman.co
+ads_redirect_uri: https://oauth.pstmn.io/v1/browser-callback
 ads_refresh_token: # ads_refresh_token
 ads_scope: [advertising::campaign_management]
 ads_token: # ads_token_string (optional)
