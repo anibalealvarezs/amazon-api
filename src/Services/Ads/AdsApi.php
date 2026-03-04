@@ -245,7 +245,7 @@ class AdsApi extends AmazonApi
             format: $format,
             adProduct: $adProduct,
         );
-        
+
         if (isset($report['reportId'])) {
             return $this->checkAndDownloadReport($report['reportId'], $path, $name, $stream);
         }

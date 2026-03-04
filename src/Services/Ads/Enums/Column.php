@@ -174,8 +174,8 @@ enum Column: string
             self::unitsSoldClicks7d->value,
         ];
 
-        foreach($groupBy as $group) {            
-            $columns = [...$columns, match($group){
+        foreach ($groupBy as $group) {
+            $columns = [...$columns, match($group) {
                 GroupBy::campaign => [
                     self::campaignId->value,
                     self::campaignName->value,
@@ -264,8 +264,8 @@ enum Column: string
             self::unitsSoldSameSku7d->value,
         ];
 
-        foreach($groupBy as $group) {            
-            $columns = [...$columns, match($group){
+        foreach ($groupBy as $group) {
+            $columns = [...$columns, match($group) {
                 GroupBy::targeting => [
                     self::adKeywordStatus->value,
                 ],
@@ -339,8 +339,8 @@ enum Column: string
             self::unitsSoldSameSku7d->value,
         ];
 
-        foreach($groupBy as $group) {            
-            $columns = [...$columns, match($group){
+        foreach ($groupBy as $group) {
+            $columns = [...$columns, match($group) {
                 GroupBy::targeting => [
                     self::adKeywordStatus->value,
                 ],
@@ -353,7 +353,8 @@ enum Column: string
     /**
      * @return array
      */
-    public static function getListForAdvertisedProduct(): array {
+    public static function getListForAdvertisedProduct(): array
+    {
         return [
             self::acosClicks14d->value,
             self::acosClicks7d->value,
@@ -412,7 +413,8 @@ enum Column: string
     /**
      * @return array
      */
-    public static function getListForPurchasedProduct(): array {
+    public static function getListForPurchasedProduct(): array
+    {
         return [
             self::adGroupId->value,
             self::adGroupName->value,

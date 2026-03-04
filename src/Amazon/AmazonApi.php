@@ -33,7 +33,7 @@ class AmazonApi extends OAuthV2Client
         ],
         array $defaultHeaders = [],
     ) {
-        return parent::__construct(
+        parent::__construct(
             baseUrl: $baseUrl,
             authUrl: "https://www.amazon.com/ap/oa",
             tokenUrl: "https://api.amazon.com/auth/o2/token",
@@ -50,13 +50,16 @@ class AmazonApi extends OAuthV2Client
             scopes: $scopes,
             token: $token,
         );
+
+        $this->setResponseErrorDetector('errors');
+        $this->setErrorMessageParser(fn ($data) => $data['errors'][0]['message'] ?? json_encode($data));
     }
 
     /**
      * @return string|null
      * @throws GuzzleException
      */
-    protected function getNewToken(): ?string
+    public function getNewToken(): ?string
     {
         $form_params = [
             "client_id" => $this->clientId,

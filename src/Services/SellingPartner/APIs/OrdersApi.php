@@ -48,8 +48,7 @@ class OrdersApi extends SellingPartnerApi
         string $actualFulfillmentSupplySourceId = null,
         bool $isISPU = null,
         string $storeChainStoreId = null,
-    ): array
-    {
+    ): array {
         $query = [
             'MarketplaceIds' => implode(',', $marketplaceIds),
             'MaxResultsPerPage' => $maxResultsPerPage,

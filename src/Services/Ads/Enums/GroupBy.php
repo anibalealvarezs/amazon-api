@@ -47,6 +47,6 @@ enum GroupBy: string
                 default => [],
             },
             default => [],
-        };  
+        };
     }
 }

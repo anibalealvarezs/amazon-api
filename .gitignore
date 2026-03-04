@@ -3,3 +3,5 @@
 /config/config.yaml
 /bin/
 /files/
+/phpstan.neon
+/.vscode/

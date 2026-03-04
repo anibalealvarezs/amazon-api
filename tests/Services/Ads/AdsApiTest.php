@@ -74,7 +74,7 @@ class AdsApiTest extends TestCase
 
         $this->assertIsArray($campaigns);
         $this->assertIsArray($campaigns['campaigns']);
-        
+
         $campaignsList = $campaigns['campaigns'];
 
         if (count($campaignsList) === 0) {
