@@ -1,0 +1,25 @@
+{
+  "name": "amazon-api-anibal",
+  "version": "1.0.0",
+  "description": "Require the package in the `composer.json` file of your project, and map the package in the `repositories` section.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anibalealvarezs/amazon-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/anibalealvarezs/amazon-api/issues"
+  },
+  "homepage": "https://github.com/anibalealvarezs/amazon-api#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.5.2"
+  }
+}
