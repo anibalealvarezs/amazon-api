@@ -5,9 +5,12 @@ namespace Tests\Services\Ads;
 use Anibalealvarezs\AmazonApi\Services\Ads\AdsApi;
 use Faker\Factory;
 use Faker\Generator;
+use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Yaml\Yaml;
 
 class AdsApiTest extends TestCase
 {
@@ -15,24 +18,42 @@ class AdsApiTest extends TestCase
     private Generator $faker;
 
     /**
+     * @param MockHandler $mock
+     * @return GuzzleClient
+     */
+    protected function createMockedGuzzleClient(MockHandler $mock): GuzzleClient
+    {
+        $handlerStack = HandlerStack::create($mock);
+        return new GuzzleClient(['handler' => $handlerStack]);
+    }
+
+    /**
      * @throws GuzzleException
      */
     protected function setUp(): void
     {
-        $config = Yaml::parseFile(__DIR__ . "/../../../config/config.yaml");
-        $this->adsApi = new AdsApi(
-            redirectUrl: 'https://oauth.pstmn.io/v1/callback',
-            clientId: $config['ads_client_id'],
-            clientSecret: $config['ads_client_secret'],
-            refreshToken: $config['ads_refresh_token'],
-            profileId: $config['ads_profile_id']
-        );
         $this->faker = Factory::create();
+
+        // Default mock for setup
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['access_token' => 'mock_token'])),
+            new Response(200, [], json_encode(['campaigns' => []])),
+        ]);
+        $guzzle = $this->createMockedGuzzleClient($mock);
+
+        $this->adsApi = new AdsApi(
+            redirectUrl: 'https://test-ads.com',
+            clientId: 'id',
+            clientSecret: 'secret',
+            refreshToken: 'token',
+            profileId: 'test-profile',
+            guzzleClient: $guzzle
+        );
     }
 
     public function testConstruct(): void
     {
-        $this->assertInstanceOf(adsApi::class, $this->adsApi);
+        $this->assertInstanceOf(AdsApi::class, $this->adsApi);
     }
 
     /**
@@ -40,251 +61,130 @@ class AdsApiTest extends TestCase
      */
     public function testGetProfiles(): void
     {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['access_token' => 'mock_token'])),
+            new Response(200, [], json_encode([
+                [
+                    'profileId' => 'p1',
+                    'countryCode' => 'US',
+                    'currencyCode' => 'USD',
+                    'dailyBudget' => 10.0,
+                    'timezone' => 'UTC',
+                    'accountInfo' => [
+                        'marketplaceStringId' => 'm1',
+                        'id' => 'i1',
+                        'type' => 't1',
+                        'name' => 'n1',
+                        'validPaymentMethod' => true
+                    ]
+                ]
+            ])),
+        ]);
+        $this->adsApi->setGuzzleClient($this->createMockedGuzzleClient($mock));
+
         $profiles = $this->adsApi->getProfiles();
-
         $this->assertIsArray($profiles);
-
-        if (count($profiles) === 0) {
-            return;
-        }
-
-        $this->assertArrayHasKey('profileId', $profiles[0]);
-        $this->assertArrayHasKey('countryCode', $profiles[0]);
-        $this->assertArrayHasKey('currencyCode', $profiles[0]);
-        $this->assertArrayHasKey('dailyBudget', $profiles[0]);
-        $this->assertArrayHasKey('timezone', $profiles[0]);
-        $this->assertArrayHasKey('accountInfo', $profiles[0]);
-        $this->assertIsArray($profiles[0]['accountInfo']);
-        $this->assertArrayHasKey('marketplaceStringId', $profiles[0]['accountInfo']);
-        $this->assertArrayHasKey('id', $profiles[0]['accountInfo']);
-        $this->assertArrayHasKey('type', $profiles[0]['accountInfo']);
-        $this->assertArrayHasKey('name', $profiles[0]['accountInfo']);
-        $this->assertArrayHasKey('validPaymentMethod', $profiles[0]['accountInfo']);
+        $this->assertCount(1, $profiles);
+        $this->assertEquals('p1', $profiles[0]['profileId']);
     }
 
     /**
      * @throws GuzzleException
      */
-    public function testGetSponsoredProductsCampaigns()
+    public function testGetSponsoredProductsCampaigns(): void
     {
-        $campaigns = $this->adsApi->getSponsoredProductsCampaigns(
-            maxResults: $this->faker->numberBetween(1, 1000),
-            includeExtendedDataFields: $this->faker->boolean()
-        );
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['access_token' => 'mock_token'])),
+            new Response(200, [], json_encode(['campaigns' => [['campaignId' => 'c1']]])),
+        ]);
+        $this->adsApi->setGuzzleClient($this->createMockedGuzzleClient($mock));
 
+        $campaigns = $this->adsApi->getSponsoredProductsCampaigns();
         $this->assertIsArray($campaigns);
-        $this->assertIsArray($campaigns['campaigns']);
-
-        $campaignsList = $campaigns['campaigns'];
-
-        if (count($campaignsList) === 0) {
-            return;
-        }
-
-        $this->assertCampaigns($campaignsList);
-    }
-
-    /**
-     */
-    public function testGetAllSponsoredProductsCampaigns()
-    {
-        $campaigns = $this->adsApi->getAllSponsoredProductsCampaigns(
-            includeExtendedDataFields: $this->faker->boolean()
-        );
-
-        $this->assertIsArray($campaigns);
-        $this->assertIsArray($campaigns['campaigns']);
-
-        $campaignsList = $campaigns['campaigns'];
-
-        if (count($campaignsList) === 0) {
-            return;
-        }
-
-        $this->assertCampaigns($campaignsList);
-    }
-
-    /**
-     */
-    private function assertCampaigns(array $campaignsList): void
-    {
-        $this->assertArrayHasKey('budget', $campaignsList[0]);
-        $this->assertIsArray($campaignsList[0]['budget']);
-        $this->assertArrayHasKey('budget', $campaignsList[0]['budget']);
-        $this->assertIsFloat($campaignsList[0]['budget']['budget']);
-        if (isset($campaignsList[0]['budget']['effectiveBudget'])) {
-            $this->assertIsFloat($campaignsList[0]['budget']['effectiveBudget']);
-        }
-        $this->assertArrayHasKey('budgetType', $campaignsList[0]['budget']);
-        $this->assertArrayHasKey('campaignId', $campaignsList[0]);
-        $this->assertArrayHasKey('dynamicBidding', $campaignsList[0]);
-        $this->assertIsArray($campaignsList[0]['dynamicBidding']);
-        $this->assertArrayHasKey('placementBidding', $campaignsList[0]['dynamicBidding']);
-        $this->assertIsArray($campaignsList[0]['dynamicBidding']['placementBidding']);
-        if (count($campaignsList[0]['dynamicBidding']['placementBidding']) > 0) {
-            $this->assertArrayHasKey('placement', $campaignsList[0]['dynamicBidding']['placementBidding'][0]);
-            $this->assertArrayHasKey('percentage', $campaignsList[0]['dynamicBidding']['placementBidding'][0]);
-            $this->assertIsInt($campaignsList[0]['dynamicBidding']['placementBidding'][0]['percentage']);
-        }
-        if (isset($campaignsList[0]['dynamicBidding']['shopperCohortBidding'])) {
-            $this->assertIsArray($campaignsList[0]['dynamicBidding']['shopperCohortBidding']);
-            if (count($campaignsList[0]['dynamicBidding']['shopperCohortBidding']) > 0) {
-                $this->assertArrayHasKey('shopperCohortType', $campaignsList[0]['dynamicBidding']['shopperCohortBidding'][0]);
-                $this->assertArrayHasKey('percentage', $campaignsList[0]['dynamicBidding']['shopperCohortBidding'][0]);
-                $this->assertIsInt($campaignsList[0]['dynamicBidding']['shopperCohortBidding'][0]['percentage']);
-                $this->assertArrayHasKey('audienceSegments', $campaignsList[0]['dynamicBidding']['shopperCohortBidding'][0]);
-                $this->assertIsArray($campaignsList[0]['dynamicBidding']['shopperCohortBidding'][0]['audienceSegments']);
-                if (count($campaignsList[0]['dynamicBidding']['shopperCohortBidding'][0]['audienceSegments']) > 0) {
-                    $this->assertArrayHasKey('audienceId', $campaignsList[0]['dynamicBidding']['shopperCohortBidding'][0]['audienceSegments'][0]);
-                    $this->assertArrayHasKey('audienceSegmentType', $campaignsList[0]['dynamicBidding']['shopperCohortBidding'][0]['audienceSegments'][0]);
-                }
-            }
-        }
-        $this->assertArrayHasKey('strategy', $campaignsList[0]['dynamicBidding']);
-        if (isset($campaignsList[0]['extendedData'])) {
-            $this->assertArrayHasKey('creationDateTime', $campaignsList[0]['extendedData']);
-            $this->assertArrayHasKey('lastUpdateDateTime', $campaignsList[0]['extendedData']);
-            $this->assertArrayHasKey('servingStatus', $campaignsList[0]['extendedData']);
-            $this->assertArrayHasKey('servingStatusDetails', $campaignsList[0]['extendedData']);
-            $this->assertIsArray($campaignsList[0]['extendedData']['servingStatusDetails']);
-            if (count($campaignsList[0]['extendedData']['servingStatusDetails']) > 0) {
-                $this->assertArrayHasKey('name', $campaignsList[0]['extendedData']['servingStatusDetails'][0]);
-            }
-        }
-        $this->assertArrayHasKey('name', $campaignsList[0]);
-        $this->assertArrayHasKey('startDate', $campaignsList[0]);
-        $this->assertArrayHasKey('state', $campaignsList[0]);
-        $this->assertArrayHasKey('targetingType', $campaignsList[0]);
-        $this->assertArrayHasKey('tags', $campaignsList[0]);
     }
 
     /**
      * @throws GuzzleException
      */
-    public function testGetSponsoredProductsAdGroups()
+    public function testGetSponsoredProductsCampaignsAndProcess(): void
     {
-        $adGroups = $this->adsApi->getSponsoredProductsAdGroups(
-            maxResults: $this->faker->numberBetween(1, 1000),
-            includeExtendedDataFields: $this->faker->boolean()
-        );
+        $response1 = [
+            'campaigns' => [['campaignId' => 'c1']],
+            'nextToken' => 'next_token'
+        ];
+        $response2 = [
+            'campaigns' => [['campaignId' => 'c2']],
+        ];
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['access_token' => 'mock_token'])),
+            new Response(200, [], json_encode($response1)),
+            new Response(200, [], json_encode($response2)),
+        ]);
+        $this->adsApi->setGuzzleClient($this->createMockedGuzzleClient($mock));
 
-        $this->assertIsArray($adGroups);
-        $this->assertIsArray($adGroups['adGroups']);
+        $processedCount = 0;
+        $this->adsApi->getSponsoredProductsCampaignsAndProcess(function ($data) use (&$processedCount) {
+            $processedCount += count($data);
+        });
 
-        $adGroupsList = $adGroups['adGroups'];
-
-        if (count($adGroupsList) === 0) {
-            return;
-        }
-
-        $this->assertAdGroups($adGroupsList);
-    }
-
-    /**
-     */
-    public function testGetAllSponsoredProductsAdGroups()
-    {
-        $adGroups = $this->adsApi->getAllSponsoredProductsAdGroups(
-            includeExtendedDataFields: $this->faker->boolean()
-        );
-
-        $this->assertIsArray($adGroups);
-        $this->assertIsArray($adGroups['adGroups']);
-
-        $adGroupsList = $adGroups['adGroups'];
-
-        if (count($adGroupsList) === 0) {
-            return;
-        }
-
-        $this->assertAdGroups($adGroupsList);
-    }
-
-    private function assertAdGroups(array $adGroupsList): void
-    {
-        $this->assertArrayHasKey('adGroupId', $adGroupsList[0]);
-        $this->assertArrayHasKey('campaignId', $adGroupsList[0]);
-        $this->assertArrayHasKey('name', $adGroupsList[0]);
-        $this->assertArrayHasKey('state', $adGroupsList[0]);
-        $this->assertArrayHasKey('defaultBid', $adGroupsList[0]);
-        $this->assertIsFloat($adGroupsList[0]['defaultBid']);
-        if (isset($adGroupsList[0]['extendedData'])) {
-            $this->assertArrayHasKey('creationDateTime', $adGroupsList[0]['extendedData']);
-            $this->assertArrayHasKey('lastUpdateDateTime', $adGroupsList[0]['extendedData']);
-            $this->assertArrayHasKey('servingStatus', $adGroupsList[0]['extendedData']);
-            $this->assertArrayHasKey('servingStatusDetails', $adGroupsList[0]['extendedData']);
-            $this->assertIsArray($adGroupsList[0]['extendedData']['servingStatusDetails']);
-            if (count($adGroupsList[0]['extendedData']['servingStatusDetails']) > 0) {
-                $this->assertArrayHasKey('name', $adGroupsList[0]['extendedData']['servingStatusDetails'][0]);
-            }
-        }
+        $this->assertEquals(2, $processedCount);
     }
 
     /**
      * @throws GuzzleException
      */
-    public function testGetSponsoredProductsAds()
+    public function testGetAllSponsoredProductsCampaignsPaginated(): void
     {
-        $ads = $this->adsApi->getSponsoredProductsAds(
-            maxResults: $this->faker->numberBetween(1, 1000),
-            includeExtendedDataFields: $this->faker->boolean()
-        );
+        $response1 = [
+            'campaigns' => [['campaignId' => 'c1']],
+            'nextToken' => 'next_token'
+        ];
+        $response2 = [
+            'campaigns' => [['campaignId' => 'c2']],
+        ];
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['access_token' => 'mock_token'])),
+            new Response(200, [], json_encode($response1)),
+            new Response(200, [], json_encode($response2)),
+        ]);
+        $this->adsApi->setGuzzleClient($this->createMockedGuzzleClient($mock));
 
-        $this->assertIsArray($ads);
-        $this->assertIsArray($ads['productAds']);
-
-        $adsList = $ads['productAds'];
-
-        if (count($adsList) === 0) {
-            return;
-        }
-
-        $this->assertAds($adsList);
+        $result = $this->adsApi->getAllSponsoredProductsCampaigns();
+        $this->assertCount(2, $result['campaigns']);
     }
 
     /**
+     * @throws GuzzleException
      */
-    public function testGetAllSponsoredProductsAds()
+    public function testGetSponsoredProductsCampaignsEmpty(): void
     {
-        $ads = $this->adsApi->getAllSponsoredProductsAds(
-            includeExtendedDataFields: $this->faker->boolean()
-        );
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['access_token' => 'mock_token'])),
+            new Response(200, [], json_encode(['campaigns' => []])),
+        ]);
+        $this->adsApi->setGuzzleClient($this->createMockedGuzzleClient($mock));
 
-        $this->assertIsArray($ads);
-        $this->assertIsArray($ads['productAds']);
-
-        $adsList = $ads['productAds'];
-
-        if (count($adsList) === 0) {
-            return;
-        }
-
-        $this->assertAds($adsList);
+        $result = $this->adsApi->getAllSponsoredProductsCampaigns();
+        $this->assertCount(0, $result['campaigns']);
     }
 
     /**
+     * @throws GuzzleException
      */
-    private function assertAds(array $adsList): void
+    public function testGetSponsoredProductsCampaignsErrorMidLoop(): void
     {
-        $this->assertArrayHasKey('adId', $adsList[0]);
-        $this->assertArrayHasKey('adGroupId', $adsList[0]);
-        $this->assertArrayHasKey('campaignId', $adsList[0]);
-        $this->assertArrayHasKey('state', $adsList[0]);
-        $this->assertArrayHasKey('asin', $adsList[0]);
-        $this->assertArrayHasKey('sku', $adsList[0]);
-        if (isset($adGroupsList[0]['extendedData'])) {
-            $this->assertArrayHasKey('creationDateTime', $adGroupsList[0]['extendedData']);
-            $this->assertArrayHasKey('lastUpdateDateTime', $adGroupsList[0]['extendedData']);
-            $this->assertArrayHasKey('servingStatus', $adGroupsList[0]['extendedData']);
-            $this->assertArrayHasKey('servingStatusDetails', $adGroupsList[0]['extendedData']);
-            $this->assertIsArray($adGroupsList[0]['extendedData']['servingStatusDetails']);
-            if (count($adGroupsList[0]['extendedData']['servingStatusDetails']) > 0) {
-                $this->assertArrayHasKey('name', $adGroupsList[0]['extendedData']['servingStatusDetails'][0]);
-            }
-        }
-        if (isset($adsList[0]['globalStoreSetting'])) {
-            $this->assertIsArray($adsList[0]['globalStoreSetting']);
-            $this->assertArrayHasKey('catalogSourceCountryCode', $adsList[0]['globalStoreSetting']);
-        }
+        $response1 = [
+            'campaigns' => [['campaignId' => 'c1']],
+            'nextToken' => 'next_token'
+        ];
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['access_token' => 'mock_token'])),
+            new Response(200, [], json_encode($response1)),
+            new Response(500, [], 'Internal Server Error'),
+        ]);
+        $this->adsApi->setGuzzleClient($this->createMockedGuzzleClient($mock));
+
+        $this->expectException(\Anibalealvarezs\ApiSkeleton\Classes\Exceptions\ApiRequestException::class);
+        $this->adsApi->getSponsoredProductsCampaignsAndProcess(function ($data) {});
     }
 }

@@ -17,6 +17,7 @@ class AmazonApi extends OAuthV2Client
      * @param string $token
      * @param array $authSettings
      * @param array $defaultHeaders
+     * @param \GuzzleHttp\Client|null $guzzleClient
      * @throws GuzzleException
      */
     public function __construct(
@@ -32,6 +33,7 @@ class AmazonApi extends OAuthV2Client
             'headerPrefix' => 'Bearer ',
         ],
         array $defaultHeaders = [],
+        ?\GuzzleHttp\Client $guzzleClient = null,
     ) {
         parent::__construct(
             baseUrl: $baseUrl,
@@ -49,6 +51,7 @@ class AmazonApi extends OAuthV2Client
             ],
             scopes: $scopes,
             token: $token,
+            guzzleClient: $guzzleClient,
         );
 
         $this->setResponseErrorDetector('errors');
