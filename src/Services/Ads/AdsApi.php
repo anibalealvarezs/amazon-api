@@ -25,6 +25,7 @@ class AdsApi extends AmazonApi
      * @param array $scopes
      * @param string $token
      * @param string $profileId
+     * @param \GuzzleHttp\Client|null $guzzleClient
      * @throws GuzzleException
      */
     public function __construct(
@@ -35,6 +36,7 @@ class AdsApi extends AmazonApi
         array $scopes = [],
         string $token = "",
         string $profileId = "",
+        ?\GuzzleHttp\Client $guzzleClient = null,
     ) {
         $this->profileId = $profileId;
 
@@ -49,6 +51,7 @@ class AdsApi extends AmazonApi
             defaultHeaders: [
                 'Amazon-Advertising-API-ClientId' => $clientId,
             ],
+            guzzleClient: $guzzleClient,
         );
     }
 
@@ -333,6 +336,21 @@ class AdsApi extends AmazonApi
         }
     }
 
+    protected function fetchAmazonAllAndProcess(
+        callable $callback,
+        callable $fetchMethod,
+        array $args,
+        string $dataKey,
+    ): void {
+        $nextToken = null;
+        do {
+            $params = $args;
+            $params['nextToken'] = $nextToken;
+            $response = $fetchMethod(...array_values($params));
+            $callback($response[$dataKey] ?? []);
+        } while (isset($response['nextToken']) && ($nextToken = $response['nextToken']));
+    }
+
     /**
      * @param int $maxResults
      * @param bool $includeExtendedDataFields
@@ -370,27 +388,40 @@ class AdsApi extends AmazonApi
         return json_decode($response->getBody()->getContents(), true);
     }
 
-    /*
+    /**
+     * @param callable $callback
      * @param bool $includeExtendedDataFields
+     * @return void
+     * @throws GuzzleException
+     */
+    public function getSponsoredProductsCampaignsAndProcess(
+        callable $callback,
+        bool $includeExtendedDataFields = true,
+    ): void {
+        $this->fetchAmazonAllAndProcess(
+            callback: $callback,
+            fetchMethod: [$this, 'getSponsoredProductsCampaigns'],
+            args: ['maxResults' => 1000, 'includeExtendedDataFields' => $includeExtendedDataFields],
+            dataKey: 'campaigns',
+        );
+    }
+
+    /**
+     * @param bool $includeExtendedDataFields
+     * @return array
+     * @throws GuzzleException
      */
     public function getAllSponsoredProductsCampaigns(
         bool $includeExtendedDataFields = true,
     ): array {
-
-        $nextToken = null;
-        $campaigns = [
-            'campaigns' => [],
-        ];
-
-        do {
-            $response = $this->getSponsoredProductsCampaigns(
-                includeExtendedDataFields: $includeExtendedDataFields,
-                nextToken: $nextToken,
-            );
-            $campaigns['campaigns'] = array_merge($campaigns['campaigns'], $response['campaigns']);
-        } while (isset($response['nextToken']) && $nextToken = $response['nextToken']);
-
-        return $campaigns;
+        $campaigns = [];
+        $this->getSponsoredProductsCampaignsAndProcess(
+            callback: function ($data) use (&$campaigns) {
+                $campaigns = array_merge($campaigns, $data);
+            },
+            includeExtendedDataFields: $includeExtendedDataFields,
+        );
+        return ['campaigns' => $campaigns];
     }
 
     /**
@@ -431,6 +462,24 @@ class AdsApi extends AmazonApi
     }
 
     /**
+     * @param callable $callback
+     * @param bool $includeExtendedDataFields
+     * @return void
+     * @throws GuzzleException
+     */
+    public function getSponsoredProductsAdGroupsAndProcess(
+        callable $callback,
+        bool $includeExtendedDataFields = true,
+    ): void {
+        $this->fetchAmazonAllAndProcess(
+            callback: $callback,
+            fetchMethod: [$this, 'getSponsoredProductsAdGroups'],
+            args: ['maxResults' => 1000, 'includeExtendedDataFields' => $includeExtendedDataFields],
+            dataKey: 'adGroups',
+        );
+    }
+
+    /**
      * @param bool $includeExtendedDataFields
      * @return array
      * @throws GuzzleException
@@ -438,21 +487,14 @@ class AdsApi extends AmazonApi
     public function getAllSponsoredProductsAdGroups(
         bool $includeExtendedDataFields = true,
     ): array {
-
-        $nextToken = null;
-        $adGroups = [
-            'adGroups' => [],
-        ];
-
-        do {
-            $response = $this->getSponsoredProductsAdGroups(
-                includeExtendedDataFields: $includeExtendedDataFields,
-                nextToken: $nextToken,
-            );
-            $adGroups['adGroups'] = array_merge($adGroups['adGroups'], $response['adGroups']);
-        } while (isset($response['nextToken']) && $nextToken = $response['nextToken']);
-
-        return $adGroups;
+        $adGroups = [];
+        $this->getSponsoredProductsAdGroupsAndProcess(
+            callback: function ($data) use (&$adGroups) {
+                $adGroups = array_merge($adGroups, $data);
+            },
+            includeExtendedDataFields: $includeExtendedDataFields,
+        );
+        return ['adGroups' => $adGroups];
     }
 
     /**
@@ -493,6 +535,24 @@ class AdsApi extends AmazonApi
     }
 
     /**
+     * @param callable $callback
+     * @param bool $includeExtendedDataFields
+     * @return void
+     * @throws GuzzleException
+     */
+    public function getSponsoredProductsAdsAndProcess(
+        callable $callback,
+        bool $includeExtendedDataFields = true,
+    ): void {
+        $this->fetchAmazonAllAndProcess(
+            callback: $callback,
+            fetchMethod: [$this, 'getSponsoredProductsAds'],
+            args: ['maxResults' => 1000, 'includeExtendedDataFields' => $includeExtendedDataFields],
+            dataKey: 'productAds',
+        );
+    }
+
+    /**
      * @param bool $includeExtendedDataFields
      * @return array
      * @throws GuzzleException
@@ -500,20 +560,13 @@ class AdsApi extends AmazonApi
     public function getAllSponsoredProductsAds(
         bool $includeExtendedDataFields = true,
     ): array {
-
-        $nextToken = null;
-        $ads = [
-            'productAds' => [],
-        ];
-
-        do {
-            $response = $this->getSponsoredProductsAds(
-                includeExtendedDataFields: $includeExtendedDataFields,
-                nextToken: $nextToken,
-            );
-            $ads['productAds'] = array_merge($ads['productAds'], $response['productAds']);
-        } while (isset($response['nextToken']) && $nextToken = $response['nextToken']);
-
-        return $ads;
+        $ads = [];
+        $this->getSponsoredProductsAdsAndProcess(
+            callback: function ($data) use (&$ads) {
+                $ads = array_merge($ads, $data);
+            },
+            includeExtendedDataFields: $includeExtendedDataFields,
+        );
+        return ['productAds' => $ads];
     }
 }
