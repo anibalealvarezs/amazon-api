@@ -3,6 +3,7 @@
 namespace Anibalealvarezs\AmazonApi\Amazon;
 
 use Anibalealvarezs\ApiSkeleton\Clients\OAuthV2Client;
+use Anibalealvarezs\AmazonApi\Amazon\Support\AmazonErrorClassifier;
 use GuzzleHttp\Exception\GuzzleException;
 
 class AmazonApi extends OAuthV2Client
@@ -56,6 +57,7 @@ class AmazonApi extends OAuthV2Client
 
         $this->setResponseErrorDetector('errors');
         $this->setErrorMessageParser(fn ($data) => $data['errors'][0]['message'] ?? json_encode($data));
+        $this->setRateLimitDetector([AmazonErrorClassifier::class, 'isRetryable']);
     }
 
     /**
